@@ -1,0 +1,75 @@
+#define a function for running SPIRIT high risk members through spirit_dnn and provide predictions output in a dataframe
+#provide a histogram of 0/1 calls where 0=encounter not predicted to be of PI risk and 1=encounter predicting PI risk
+#calculate pi_Ratio (fraction of encounters suggesting PI risk for a given individual)
+
+def pi_predictions(hr_memberdf):
+    #hr_memberdf = dataframe with encoded SPIRIT Analyzer output
+    #rename df as needed
+    
+    #load previously trained model (dnn1x128)
+    spirit_dnn = tf.keras.models.load_model('spirit_dnn1x128')
+    print("Summary of SPIRIT DNN Model Used:")
+    print(spirit_dnn.summary())
+    
+    #make predictions on high risk members
+    X = hr_memberdf.values[:, 1:8] #features
+    X = np.asarray(X).astype('int64')
+    yhat = spirit_dnn.predict(X) #predictions
+    
+    #show 0/1 histograms for predictions
+    fig, ax = plt.subplots(figsize=(8,8))
+    counts, bins, patches = plt.hist(yhat)
+    bin_x_centers = 0.5 * np.diff(bins) + bins[:-1]
+    bin_y_centers = ax.get_yticks()[1] * 0.25
+    ax.set_title('DNN Prediction Counts for All High Risk Member Encounters')
+    ax.set_ylabel('Counts')
+    ax.set_xlabel('Class')
+
+
+    for i in range(len(bins)-1):
+        bin_label = "{0:,}".format(counts[i]) + "  ({0:,.2f}%)".format((counts[i]/counts.sum())*100)
+        plt.text(bin_x_centers[i], bin_y_centers, bin_label, rotation=90, rotation_mode='anchor')
+        
+        
+    #format prediction array as whole integer
+    yhat = yhat.astype(int)
+
+    #add prediction to high risk member df
+    yhatdf = pd.DataFrame({"Prediction": [yhat]})
+    hr_memberdf["Prediction"] = yhat
+    hr_pred_df = hr_memberdf.sort_values(by =['MedicaidID'], ascending=False)
+    print("High Risk Member Encounters & Model Predictions:")
+    print("High Risk Member Predictions Dataframe Shape:", hr_pred_df.shape)
+
+    
+    ## Create pi_Ratio = a ratio of the number of encounters suggesting PI risk divided by total number of encounters for the unique individual
+    #split df into pi and null calls
+    pi_callsdf = hr_pred_df.loc[(hr_pred_df['Prediction']==1)]
+    null_callsdf = hr_pred_df.loc[(hr_pred_df['Prediction']==0)]
+    
+    #create separate df with pi calls by MedicaidID
+    pi_callsdf = pi_callsdf['MedicaidID'].value_counts().to_frame()
+    null_callsdf = null_callsdf['MedicaidID'].value_counts().to_frame()
+    
+    #create total encounter count for each hr member
+    pt_total_encdf = hr_pred_df['MedicaidID'].value_counts().to_frame()
+    
+    #rename IDs by pi and total calls for each encounter
+    pi_callsdf = pi_callsdf.rename(columns={"MedicaidID": "MedicaidID_pi"})
+    pt_total_encdf = pt_total_encdf.rename(columns={"MedicaidID": "MedicaidID_Tot"})
+    
+    #merge pi and total encounter df
+    merge_callsdf = pd.merge(pi_callsdf, pt_total_encdf, left_index=True, right_index=True)
+   
+    #create df with pi call/total call ratio for each high risk member
+    merge_callsdf['pi_Ratio'] = merge_callsdf['MedicaidID_pi']/merge_callsdf['MedicaidID_Tot']
+    print("Unique Individuals With Predictions Dataframe:", merge_callsdf.shape)
+    print(merge_callsdf.sort_values('pi_Ratio', ascending=False))
+    
+    #save calls and ratios for all patients ranked and print to csv
+    #rename file as needed
+    merge_callsdf.to_csv('pi_Ratio.csv')
+    
+#define dataset variable, run model and make predictions 
+hr_memberdf = hr_memberdf
+pi_predictions(hr_memberdf)
