@@ -1,0 +1,58 @@
+#Importing PlaidML for Use of Keras with Macs
+#See also and with credit - https://github.com/plaidml/plaidml
+import plaidml.keras
+plaidml.keras.install_backend()
+import os
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
+#Required Packages for DNN 
+import tensorflow as tf 
+from tensorflow.keras import Model
+from tensorflow.keras import Input
+from tensorflow.keras.layers import Dense
+from tensorflow.keras import Sequential
+
+#preprocess & evaluation 
+import sklearn
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_confusion_matrix
+
+#Ensure that all 7 claims elements are encoded and structured and ordered as:
+    # GenderCD, BirthDTS, PrimaryDiagnosisCD,  SecondaryDiagnosisCD, LineOneCPTCD, LineTwoCPTCD, TotalPaidAMT
+
+#DNN architecture for 1 x 128 model
+#define model 1 layer x 128 neurons
+model = Sequential()
+model.add(Dense(128, activation='relu', kernel_initializer='he_normal', input_shape=(7,)))
+model.add(Dense(1, activation='sigmoid'))
+
+# #compile model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+#fit model
+model.fit(X_train, y_train, epochs=150, batch_size=32, verbose=1)
+
+#test model with train-test split from unseen 30% of data as above 
+yhat = model.predict_classes(X_test, verbose=0)
+
+#evaluate performance
+acc = accuracy_score(y_test, yhat)
+print('Test Accuracy:', acc)
+precision = precision_score(y_test, yhat)
+print("Precision:", precision)
+recall = recall_score(y_test, yhat)
+print("Recall:", recall)
+f1 = f1_score(y_test, yhat)
+print("F1 Score:", f1)
+AUROC = roc_auc_score(y_test, yhat)
+print("AUROC:", AUROC)
