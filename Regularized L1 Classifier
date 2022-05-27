@@ -1,0 +1,35 @@
+#preprocess & evaluate
+import sklearn
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_confusion_matrix
+
+#load model
+from sklearn.linear_model import LogisticRegression
+
+#random state = none, no regularization
+logreg_clf = LogisticRegression()
+logreg_scores = cross_val_score(logreg_clf, X_train, y_train, cv=10)
+
+yhat = logreg_clf.fit(X_train,y_train).predict(X_test)
+
+#evaluate performance
+acc = accuracy_score(y_test, yhat)
+print('Test Accuracy:', acc)
+precision = precision_score(y_test, yhat)
+print("Precision:", precision)
+recall = recall_score(y_test, yhat)
+print("Recall:", recall)
+f1 = f1_score(y_test, yhat)
+print("F1 Score:", f1)
+AUROC = roc_auc_score(y_test, yhat)
+print("AUROC:", AUROC)
