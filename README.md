@@ -6,7 +6,7 @@ A claims data analytical pipeline for ascertaining population-wide and individua
   - Rider NL et al. Front. Pediatr. 2019 Mar 18 PMID: 30937298
 
 ## The following claims data elements will be required for patient-level risk stratification and to calculate the "PI Ratio":
-  - Gender Code (GenderCD)
+  - Gender (biological sex) Code (GenderCD)
   - Birth Date (BirthDTS)
   - Primary ICD10 Code (PrimaryDiagnosisCD)
   - Secondary ICD10 Code (SecondaryDiagnosisCD)
